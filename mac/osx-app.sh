@@ -124,6 +124,7 @@ install_manually() {
     cp -R $verbose "${BUILD}/src/pdsend"      "${DEST}/bin/"
     cp -R $verbose "${BUILD}/src/pdreceive"   "${DEST}/bin/"
     cp -R $verbose "${BUILD}/src/pd-watchdog" "${DEST}/bin/" || true
+    cp -R $verbose "${BUILD}/src/pd-mcp" "${DEST}/bin/" || true
 
     # install resources
     mkdir -p "${DEST}/po"
@@ -291,10 +292,10 @@ done
 
 # check for version argument and set app path in the dir the script is run from
 if [ "$1" != "" ] ; then
-    APP="$(pwd)/Pd-${1}.app"
+    APP="$(pwd)/Pd-vibes-${1}.app"
 else
     # version not specified
-    APP="$(pwd)/Pd.app"
+    APP="$(pwd)/Pd-vibes.app"
 fi
 
 # Go

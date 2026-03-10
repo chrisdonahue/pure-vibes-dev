@@ -6,6 +6,7 @@
 #include "m_imp.h"
 #include "s_stuff.h"
 #include "s_net.h"
+#include "mcp/mcp_server.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <limits.h>
@@ -585,6 +586,9 @@ static char *(usagemessage[]) = {
 "-autopatch       -- enable auto-patching to new objects (true by default)\n",
 "-noautopatch     -- defeat auto-patching\n",
 "-compatibility <f> -- set back-compatibility to version <f>\n",
+"-mcpport <n>     -- set MCP server port (default: 4330) and enable MCP\n",
+"-mcpnetwork      -- allow MCP connections from network (default: localhost)\n",
+"-nomcp           -- disable MCP server\n",
 };
 
 static void sys_printusage(void)
@@ -1436,6 +1440,21 @@ int sys_argparse(int argc, const char **argv)
             argc--, argv++;
         else if (!strcmp(*argv, "-prefsfile") && argc > 1) /* this too */
             argc -= 2, argv +=2;
+        else if (!strcmp(*argv, "-mcpport") && argc > 1)
+        {
+            mcp_start(atoi(argv[1]), 1);
+            argc -= 2; argv += 2;
+        }
+        else if (!strcmp(*argv, "-mcpnetwork"))
+        {
+            glob_mcp_network(NULL, 1);
+            argc--; argv++;
+        }
+        else if (!strcmp(*argv, "-nomcp"))
+        {
+            mcp_stop();
+            argc--; argv++;
+        }
         else
         {
         usage:

@@ -2,6 +2,8 @@
 
 This is the README file for Pd, a free real-time computer music system.
 
+This is *not* the README for Pd-vibes, which is README.md
+
 ## Getting Pd
 
 You can get Pd for Linux, macOS, or Microsoft Windows from:
