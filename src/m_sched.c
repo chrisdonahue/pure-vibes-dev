@@ -7,6 +7,7 @@
 #include "m_pd.h"
 #include "m_imp.h"
 #include "s_stuff.h"
+#include "mcp/mcp_audio.h"
 #ifdef _WIN32
 #include <windows.h>
 #include <sys/timeb.h>
@@ -386,6 +387,8 @@ void sched_tick(void)
     pd_this->pd_systime = next_sys_time;
     messqueue_dispatch();
     dsp_tick();
+    mcp_audio_capture(STUFF->st_soundout, STUFF->st_outchannels,
+        DEFDACBLKSIZE, STUFF->st_dacsr);
     sched_counter++;
 }
 
