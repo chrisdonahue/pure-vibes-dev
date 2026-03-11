@@ -269,6 +269,8 @@ static cJSON *handle_initialize(cJSON *id)
     cJSON_AddStringToObject(info, "version", MCP_SERVER_VERSION);
     cJSON_AddItemToObject(result, "serverInfo", info);
 
+    cJSON_AddStringToObject(result, "instructions", MCP_INSTRUCTIONS);
+
     cJSON_AddItemToObject(resp, "result", result);
     return resp;
 }
@@ -318,7 +320,7 @@ static cJSON *handle_tools_call(cJSON *id, cJSON *req, const char *original_requ
         return make_error(id, -32000,
             "Could not connect to Pd-vibes. "
             "Make sure Pd-vibes is already running and the MCP checkbox "
-            "(Media > MCP) is enabled, then try again.");
+            "(Media > MCP Server) is enabled, then try again.");
     }
 
     /* parse the response from Pd and return it */
@@ -326,7 +328,10 @@ static cJSON *handle_tools_call(cJSON *id, cJSON *req, const char *original_requ
     free(response);
 
     if (!parsed)
-        return make_error(id, -32603, "Invalid response from Pd-vibes");
+        return make_error(id, -32603,
+            "Invalid response from Pd-vibes. "
+            "Make sure Pd-vibes is still running and the MCP checkbox "
+            "(Media > MCP Server) is enabled.");
 
     return parsed;
 }

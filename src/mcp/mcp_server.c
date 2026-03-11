@@ -1512,6 +1512,8 @@ static cJSON *mcp_handle_initialize(cJSON *id, cJSON *params)
     }
     cJSON_AddItemToObject(result, "serverInfo", info);
 
+    cJSON_AddStringToObject(result, "instructions", MCP_INSTRUCTIONS);
+
     cJSON_AddItemToObject(resp, "result", result);
     return resp;
 }
