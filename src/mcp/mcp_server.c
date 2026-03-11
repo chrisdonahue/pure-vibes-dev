@@ -316,15 +316,9 @@ static cJSON *mcp_tool_list_patches(cJSON *args)
     return mcp_wrap_content(result);
 }
 
-/* ---- tool: get_patch_state ---- */
-static cJSON *mcp_tool_get_patch_state(cJSON *args)
+/* ---- serialize a canvas to JSON (shared by get_patch_state & help) ---- */
+static cJSON *mcp_serialize_canvas(t_glist *canvas)
 {
-    const char *patch_id = cJSON_GetStringValue(
-        cJSON_GetObjectItem(args, "patch_id"));
-    t_glist *canvas = mcp_find_canvas_by_id(patch_id);
-    if (!canvas)
-        return mcp_wrap_content(mcp_error_result("patch not found"));
-
     char idbuf[32];
     cJSON *result = cJSON_CreateObject();
     cJSON_AddStringToObject(result, "patch_id",
@@ -400,7 +394,19 @@ static cJSON *mcp_tool_get_patch_state(cJSON *args)
     }
     cJSON_AddItemToObject(result, "connections", connections);
 
-    return mcp_wrap_content(result);
+    return result;
+}
+
+/* ---- tool: get_patch_state ---- */
+static cJSON *mcp_tool_get_patch_state(cJSON *args)
+{
+    const char *patch_id = cJSON_GetStringValue(
+        cJSON_GetObjectItem(args, "patch_id"));
+    t_glist *canvas = mcp_find_canvas_by_id(patch_id);
+    if (!canvas)
+        return mcp_wrap_content(mcp_error_result("patch not found"));
+
+    return mcp_wrap_content(mcp_serialize_canvas(canvas));
 }
 
 /* ---- tool: create_object ---- */
@@ -897,6 +903,64 @@ static cJSON *mcp_tool_list_object_names(cJSON *args)
     return mcp_wrap_content(result);
 }
 
+/* ---- open a help patch silently, serialize, and close ---- */
+static cJSON *mcp_load_help_patch(const char *helpname, const char *helpdir)
+{
+    char realname[MAXPDSTRING], dirbuf[MAXPDSTRING], *basename;
+    const char *usedir = (*helpdir ? helpdir : "./");
+    int fd;
+
+    /* try "name-help.pd" */
+    strncpy(realname, helpname, MAXPDSTRING - 10);
+    realname[MAXPDSTRING - 10] = 0;
+    if (strlen(realname) > 3 &&
+        !strcmp(realname + strlen(realname) - 3, ".pd"))
+            realname[strlen(realname) - 3] = 0;
+    strcat(realname, "-help.pd");
+    fd = do_open_via_path(usedir, realname, "", dirbuf, &basename,
+        MAXPDSTRING, 0, STUFF->st_helppath, 1);
+
+    if (fd < 0)
+    {
+        /* try "help-name.pd" */
+        strcpy(realname, "help-");
+        strncat(realname, helpname, MAXPDSTRING - 10);
+        realname[MAXPDSTRING - 1] = 0;
+        fd = do_open_via_path(usedir, realname, "", dirbuf, &basename,
+            MAXPDSTRING, 0, STUFF->st_helppath, 1);
+    }
+
+    if (fd < 0)
+        return NULL;
+    close(fd);
+
+    /* open the patch silently (pop with vis=0, skip loadbang) */
+    t_pd *x = 0, *boundx;
+    int dspstate = canvas_suspend_dsp();
+    boundx = s__X.s_thing;
+    s__X.s_thing = 0;
+    binbuf_evalfile(gensym(basename), gensym(dirbuf));
+    while ((x != s__X.s_thing) && s__X.s_thing)
+    {
+        x = s__X.s_thing;
+        pd_vmess(x, gensym("pop"), "i", 0);  /* 0 = don't make visible */
+    }
+    /* deliberately skip pd_doloadbang() */
+    canvas_resume_dsp(dspstate);
+    s__X.s_thing = boundx;
+
+    if (!x)
+        return NULL;
+
+    /* serialize the help patch contents */
+    cJSON *help = mcp_serialize_canvas((t_glist *)x);
+
+    /* close and free the silently-opened patch */
+    pd_free(x);
+
+    return help;
+}
+
 /* ---- tool: get_object_doc ---- */
 static cJSON *mcp_tool_get_object_doc(cJSON *args)
 {
@@ -923,6 +987,18 @@ static cJSON *mcp_tool_get_object_doc(cJSON *args)
     cJSON_AddBoolToObject(result, "is_patchable", c->c_patchable != 0);
     cJSON_AddBoolToObject(result, "has_default_inlet", c->c_firstin != 0);
 
+    /* standard method handlers */
+    if (c->c_bangmethod)
+        cJSON_AddBoolToObject(result, "accepts_bang", 1);
+    if (c->c_floatmethod)
+        cJSON_AddBoolToObject(result, "accepts_float", 1);
+    if (c->c_symbolmethod)
+        cJSON_AddBoolToObject(result, "accepts_symbol", 1);
+    if (c->c_listmethod)
+        cJSON_AddBoolToObject(result, "accepts_list", 1);
+    if (c->c_anymethod)
+        cJSON_AddBoolToObject(result, "accepts_anything", 1);
+
     const char *helpname = class_gethelpname(c);
     if (helpname)
         cJSON_AddStringToObject(result, "help_file", helpname);
@@ -931,12 +1007,15 @@ static cJSON *mcp_tool_get_object_doc(cJSON *args)
         cJSON_AddStringToObject(result, "extern_dir",
             c->c_externdir->s_name);
 
-    /* method list */
+    /* method list (skip internal-only methods) */
     cJSON *methods = cJSON_CreateArray();
     int i;
     for (i = 0; i < c->c_nmethod; i++)
     {
         t_methodentry *me = &c->c_methods[i];
+        /* skip methods whose first arg is A_CANT (internal) */
+        if (me->me_arg[0] == A_CANT)
+            continue;
         cJSON *mobj = cJSON_CreateObject();
         cJSON_AddStringToObject(mobj, "name",
             me->me_name ? me->me_name->s_name : "?");
@@ -946,13 +1025,22 @@ static cJSON *mcp_tool_get_object_doc(cJSON *args)
         for (j = 0; j < MAXPDARG && me->me_arg[j] != A_NULL; j++)
         {
             const char *astr = mcp_atomtype_string(me->me_arg[j]);
-            if (!strcmp(astr, "(internal)")) break;
             cJSON_AddItemToArray(margs, cJSON_CreateString(astr));
         }
         cJSON_AddItemToObject(mobj, "args", margs);
         cJSON_AddItemToArray(methods, mobj);
     }
     cJSON_AddItemToObject(result, "methods", methods);
+
+    /* help patch contents */
+    if (helpname)
+    {
+        const char *helpdir = class_gethelpdir(c);
+        cJSON *help = mcp_load_help_patch(helpname,
+            helpdir ? helpdir : "");
+        if (help)
+            cJSON_AddItemToObject(result, "help_patch", help);
+    }
 
     return mcp_wrap_content(result);
 }
