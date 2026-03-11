@@ -32,6 +32,7 @@ typedef int socklen_t;
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
 #endif
@@ -45,6 +46,7 @@ typedef int socklen_t;
 #define PROXY_IO_TIMEOUT_SLOW      4
 #define PROXY_IO_TIMEOUT_DSP       8
 static int proxy_port = MCP_DEFAULT_PORT;
+static char proxy_host[256] = "127.0.0.1";
 
 /* ---- per-tool I/O timeout ---- */
 
@@ -89,7 +91,21 @@ static char *proxy_http_post(const char *json_body, int io_timeout_sec)
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons((unsigned short)proxy_port);
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+    /* resolve hostname or numeric IP */
+    {
+        struct addrinfo hints, *res;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        if (getaddrinfo(proxy_host, NULL, &hints, &res) != 0 || !res)
+        {
+            close(fd);
+            return NULL;
+        }
+        addr.sin_addr = ((struct sockaddr_in *)res->ai_addr)->sin_addr;
+        freeaddrinfo(res);
+    }
 
     /* set a connect timeout using non-blocking + select */
 #ifndef _WIN32
@@ -159,11 +175,11 @@ static char *proxy_http_post(const char *json_body, int io_timeout_sec)
         char header[512];
         int hlen = snprintf(header, sizeof(header),
             "POST /mcp HTTP/1.1\r\n"
-            "Host: 127.0.0.1\r\n"
+            "Host: %s\r\n"
             "Content-Type: application/json\r\n"
             "Content-Length: %d\r\n"
             "Connection: close\r\n"
-            "\r\n", body_len);
+            "\r\n", proxy_host, body_len);
 
         send(fd, header, hlen, 0);
         send(fd, json_body, body_len, 0);
@@ -296,9 +312,9 @@ static cJSON *handle_tools_call(cJSON *id, cJSON *req, const char *original_requ
     if (!response)
     {
         fprintf(stderr,
-            "pd-mcp: cannot reach Pd-vibes at localhost:%d; "
+            "pd-mcp: cannot reach Pd-vibes at %s:%d; "
             "make sure Pd-vibes is already running and MCP is enabled\n",
-            proxy_port);
+            proxy_host, proxy_port);
         return make_error(id, -32000,
             "Could not connect to Pd-vibes. "
             "Make sure Pd-vibes is already running and the MCP checkbox "
@@ -401,13 +417,18 @@ int main(int argc, char **argv)
                 return 1;
             }
         }
+        else if (strcmp(argv[i], "--host") == 0 && i + 1 < argc)
+        {
+            snprintf(proxy_host, sizeof(proxy_host), "%s", argv[++i]);
+        }
         else if (strcmp(argv[i], "--help") == 0 ||
                  strcmp(argv[i], "-h") == 0)
         {
             fprintf(stderr,
                 "pd-mcp: MCP stdio proxy for Pd-vibes\n"
-                "Usage: pd-mcp [--port N]\n"
-                "  --port N   Pd-vibes MCP server port (default: %d)\n",
+                "Usage: pd-mcp [--host ADDR] [--port N]\n"
+                "  --host ADDR  Pd-vibes MCP server address (default: 127.0.0.1)\n"
+                "  --port N     Pd-vibes MCP server port (default: %d)\n",
                 MCP_DEFAULT_PORT);
             return 0;
         }
@@ -418,8 +439,8 @@ int main(int argc, char **argv)
     signal(SIGPIPE, SIG_IGN);
 #endif
 
-    fprintf(stderr, "pd-mcp: proxy started (port %d)\n",
-        proxy_port);
+    fprintf(stderr, "pd-mcp: proxy started (%s:%d)\n",
+        proxy_host, proxy_port);
 
     /* read lines from stdin, process each as JSON-RPC */
     char *line = (char *)malloc(PROXY_LINE_SIZE);
