@@ -1259,7 +1259,42 @@ static cJSON *mcp_tool_open_patch(cJSON *args)
         strcpy(dir, ".");
     }
 
+    /* check if this file is already open — return existing patch */
+    {
+        t_glist *gl;
+        char idbuf[32];
+        t_symbol *file_sym = gensym(file);
+        t_symbol *dir_sym = gensym(dir);
+        for (gl = pd_this->pd_canvaslist; gl; gl = gl->gl_next)
+        {
+            if (gl->gl_name == file_sym &&
+                canvas_getdir(gl) == dir_sym)
+            {
+                cJSON *result = cJSON_CreateObject();
+                cJSON_AddBoolToObject(result, "success", 1);
+                cJSON_AddStringToObject(result, "patch_id",
+                    mcp_ptr_id(gl, idbuf, sizeof(idbuf)));
+                cJSON_AddBoolToObject(result, "already_open", 1);
+                return mcp_wrap_content(result);
+            }
+        }
+    }
+
     glob_open(NULL, gensym(file), gensym(dir), 0);
+
+    /* newly opened patch lands at the head of the canvas list */
+    {
+        t_glist *gl = pd_this->pd_canvaslist;
+        if (gl)
+        {
+            char idbuf[32];
+            cJSON *result = cJSON_CreateObject();
+            cJSON_AddBoolToObject(result, "success", 1);
+            cJSON_AddStringToObject(result, "patch_id",
+                mcp_ptr_id(gl, idbuf, sizeof(idbuf)));
+            return mcp_wrap_content(result);
+        }
+    }
 
     return mcp_wrap_content(mcp_ok_result());
 }
