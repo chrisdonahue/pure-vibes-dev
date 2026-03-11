@@ -475,10 +475,11 @@ cJSON *mcp_build_tools_list(void)
         cJSON_AddStringToObject(tool, "name", "get_audio_rms");
         cJSON_AddStringToObject(tool, "description",
             "Get RMS (root mean square) audio level statistics from Pd's "
-            "output stream over a recent time window. Returns independent "
-            "per-channel mean, variance, min, and max RMS plus dBFS. "
-            "Useful for monitoring levels, detecting silence, and "
-            "analyzing dynamics. Requires DSP to be running.");
+            "DAC output stream over a recent time window. Only audio "
+            "routed to [dac~] is captured. Returns independent per-channel "
+            "mean, variance, min, and max RMS plus dBFS. Response includes "
+            "dsp_running flag; if false, levels will read as silent because "
+            "no audio is being processed.");
         schema = mcp_make_schema(req, 1);
         mcp_schema_add_prop(schema, "duration",
             mcp_prop_number("Seconds of recent audio to analyze "

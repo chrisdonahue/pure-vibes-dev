@@ -43,6 +43,8 @@ static struct {
 
 void mcp_audio_init(void)
 {
+    if (mcp_audio.initialized)
+        return;
     mcp_audio.capacity = MCP_AUDIO_RING_CAPACITY;
     mcp_audio.ring = (t_mcp_audio_block *)getbytes(
         mcp_audio.capacity * sizeof(t_mcp_audio_block));

@@ -85,7 +85,7 @@ Other things to try:
 
 ## Pure Data tools exposed by the MCP
 
-The built-in MCP server exposes 23 tools:
+The built-in MCP server exposes 24 tools:
 
 | Category    | Tools                                                                      |
 | ----------- | -------------------------------------------------------------------------- |
@@ -95,6 +95,7 @@ The built-in MCP server exposes 23 tools:
 | Batch       | `batch_update`, `clear_patch`                                              |
 | Runtime     | `send_message`, `send_bang`, `set_number`                                  |
 | DSP         | `set_dsp`, `get_dsp_state`                                                 |
+| Multimodal  | `get_audio_rms`                                                            |
 | Selection   | `get_selection`                                                            |
 | Docs        | `list_object_names`, `get_object_doc`                                      |
 | Other       | `get_audio_midi_settings`, `get_pd_log`                                    |

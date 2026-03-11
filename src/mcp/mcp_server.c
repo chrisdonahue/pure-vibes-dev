@@ -1362,6 +1362,8 @@ static cJSON *mcp_tool_get_audio_rms(cJSON *args)
             mcp_error_result("no audio data available (is DSP running?)"));
 
     cJSON *result = cJSON_CreateObject();
+    cJSON_AddBoolToObject(result, "dsp_running",
+        canvas_dspstate ? cJSON_True : cJSON_False);
     cJSON_AddNumberToObject(result, "sample_rate", stats.sample_rate);
     cJSON_AddNumberToObject(result, "block_size", stats.block_size);
     cJSON_AddNumberToObject(result, "channels", stats.channels);
@@ -1921,6 +1923,9 @@ void mcp_init(void)
 
 void mcp_start(int port, int localhost_only)
 {
+    /* ensure audio capture is initialized (idempotent) */
+    mcp_audio_init();
+
     if (mcp_server.running)
     {
         if (port == mcp_server.port &&
