@@ -1363,7 +1363,7 @@ static cJSON *mcp_tool_get_audio_rms(cJSON *args)
 
     cJSON *result = cJSON_CreateObject();
     cJSON_AddBoolToObject(result, "dsp_running",
-        canvas_dspstate ? cJSON_True : cJSON_False);
+        canvas_dspstate != 0);
     cJSON_AddNumberToObject(result, "sample_rate", stats.sample_rate);
     cJSON_AddNumberToObject(result, "block_size", stats.block_size);
     cJSON_AddNumberToObject(result, "channels", stats.channels);

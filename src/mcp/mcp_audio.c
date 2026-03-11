@@ -82,6 +82,11 @@ void mcp_audio_capture(const t_sample *soundout, int nchannels,
     if (!mcp_audio.initialized || !mcp_audio.ring)
         return;
 
+    /* stop capturing when DSP is off to preserve last real audio
+       and avoid recording stale data from st_soundout */
+    if (!canvas_dspstate)
+        return;
+
     /* detect audio-config change and reset */
     if (nchannels != mcp_audio.channels ||
         (float)sr != mcp_audio.sample_rate ||
