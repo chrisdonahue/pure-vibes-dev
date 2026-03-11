@@ -11,11 +11,13 @@
 #include "s_stuff.h"
 #include "mcp_server.h"
 #include "mcp_tools.h"
+#include "mcp_audio.h"
 #include "cJSON.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <errno.h>
 
 #ifdef _WIN32
@@ -1257,7 +1259,42 @@ static cJSON *mcp_tool_open_patch(cJSON *args)
         strcpy(dir, ".");
     }
 
+    /* check if this file is already open — return existing patch */
+    {
+        t_glist *gl;
+        char idbuf[32];
+        t_symbol *file_sym = gensym(file);
+        t_symbol *dir_sym = gensym(dir);
+        for (gl = pd_this->pd_canvaslist; gl; gl = gl->gl_next)
+        {
+            if (gl->gl_name == file_sym &&
+                canvas_getdir(gl) == dir_sym)
+            {
+                cJSON *result = cJSON_CreateObject();
+                cJSON_AddBoolToObject(result, "success", 1);
+                cJSON_AddStringToObject(result, "patch_id",
+                    mcp_ptr_id(gl, idbuf, sizeof(idbuf)));
+                cJSON_AddBoolToObject(result, "already_open", 1);
+                return mcp_wrap_content(result);
+            }
+        }
+    }
+
     glob_open(NULL, gensym(file), gensym(dir), 0);
+
+    /* newly opened patch lands at the head of the canvas list */
+    {
+        t_glist *gl = pd_this->pd_canvaslist;
+        if (gl)
+        {
+            char idbuf[32];
+            cJSON *result = cJSON_CreateObject();
+            cJSON_AddBoolToObject(result, "success", 1);
+            cJSON_AddStringToObject(result, "patch_id",
+                mcp_ptr_id(gl, idbuf, sizeof(idbuf)));
+            return mcp_wrap_content(result);
+        }
+    }
 
     return mcp_wrap_content(mcp_ok_result());
 }
@@ -1339,6 +1376,57 @@ static cJSON *mcp_tool_get_pd_log(cJSON *args)
     return mcp_wrap_content(result);
 }
 
+/* ---- tool: get_audio_rms ---- */
+static cJSON *mcp_tool_get_audio_rms(cJSON *args)
+{
+    cJSON *j_dur = cJSON_GetObjectItem(args, "duration");
+    if (!j_dur || !cJSON_IsNumber(j_dur))
+        return mcp_wrap_content(
+            mcp_error_result("duration is required (number, in seconds)"));
+
+    float duration = (float)cJSON_GetNumberValue(j_dur);
+    if (duration <= 0.0f || duration > 120.0f)
+        return mcp_wrap_content(
+            mcp_error_result("duration must be between 0 and 120 seconds"));
+
+    t_mcp_audio_rms_stats stats;
+    memset(&stats, 0, sizeof(stats));
+
+    if (mcp_audio_query_rms(duration, &stats) != 0)
+        return mcp_wrap_content(
+            mcp_error_result("no audio data available (is DSP running?)"));
+
+    cJSON *result = cJSON_CreateObject();
+    cJSON_AddBoolToObject(result, "dsp_running",
+        canvas_dspstate != 0);
+    cJSON_AddNumberToObject(result, "sample_rate", stats.sample_rate);
+    cJSON_AddNumberToObject(result, "block_size", stats.block_size);
+    cJSON_AddNumberToObject(result, "channels", stats.channels);
+    cJSON_AddNumberToObject(result, "duration", stats.actual_duration);
+    cJSON_AddNumberToObject(result, "blocks_analyzed", stats.blocks_used);
+
+    /* independent per-channel statistics */
+    cJSON *ch_arr = cJSON_CreateArray();
+    int ch;
+    for (ch = 0; ch < stats.channels; ch++)
+    {
+        cJSON *chobj = cJSON_CreateObject();
+        cJSON_AddNumberToObject(chobj, "channel", ch);
+        cJSON_AddNumberToObject(chobj, "mean_rms", stats.mean_rms[ch]);
+        cJSON_AddNumberToObject(chobj, "var_rms", stats.var_rms[ch]);
+        cJSON_AddNumberToObject(chobj, "min_rms", stats.min_rms[ch]);
+        cJSON_AddNumberToObject(chobj, "max_rms", stats.max_rms[ch]);
+        /* dBFS for convenience */
+        float db = stats.mean_rms[ch] > 0.0f
+            ? 20.0f * log10f(stats.mean_rms[ch]) : -120.0f;
+        cJSON_AddNumberToObject(chobj, "mean_rms_db", db);
+        cJSON_AddItemToArray(ch_arr, chobj);
+    }
+    cJSON_AddItemToObject(result, "channel_stats", ch_arr);
+
+    return mcp_wrap_content(result);
+}
+
 /* ==== TOOL DISPATCH ==== */
 static cJSON *mcp_dispatch_tool(const char *name, cJSON *args)
 {
@@ -1389,6 +1477,8 @@ static cJSON *mcp_dispatch_tool(const char *name, cJSON *args)
         return mcp_tool_new_patch(args);
     if (!strcmp(name, "get_audio_midi_settings"))
         return mcp_tool_get_audio_midi_settings(args);
+    if (!strcmp(name, "get_audio_rms"))
+        return mcp_tool_get_audio_rms(args);
 
     return mcp_wrap_content(mcp_error_result("unknown tool"));
 }
@@ -1863,11 +1953,14 @@ int mcp_is_running(void)
 
 void mcp_init(void)
 {
-    /* nothing to do yet — server starts when enabled */
+    mcp_audio_init();
 }
 
 void mcp_start(int port, int localhost_only)
 {
+    /* ensure audio capture is initialized (idempotent) */
+    mcp_audio_init();
+
     if (mcp_server.running)
     {
         if (port == mcp_server.port &&
@@ -1964,6 +2057,7 @@ void mcp_stop(void)
 void mcp_free(void)
 {
     mcp_stop();
+    mcp_audio_free();
 }
 
 /* ---- glob methods (called from Tcl via pdsend) ---- */

@@ -40,14 +40,35 @@ typedef int socklen_t;
 #define PROXY_BUF_SIZE       (1024 * 1024)
 #define PROXY_LINE_SIZE      (1024 * 1024)
 #define PROXY_CONNECT_TIMEOUT_SEC  2
-#define PROXY_IO_TIMEOUT_SEC       2
+#define PROXY_IO_TIMEOUT_DEFAULT   1
+#define PROXY_IO_TIMEOUT_DISK      2
+#define PROXY_IO_TIMEOUT_SLOW      4
+#define PROXY_IO_TIMEOUT_DSP       8
 static int proxy_port = MCP_DEFAULT_PORT;
+
+/* ---- per-tool I/O timeout ---- */
+
+static int proxy_io_timeout_for_tool(const char *tool_name)
+{
+    if (!tool_name)
+        return PROXY_IO_TIMEOUT_DEFAULT;
+    if (strcmp(tool_name, "set_dsp") == 0)
+        return PROXY_IO_TIMEOUT_DSP;
+    if (strcmp(tool_name, "batch_update") == 0 ||
+        strcmp(tool_name, "get_audio_rms") == 0)
+        return PROXY_IO_TIMEOUT_SLOW;
+    if (strcmp(tool_name, "open_patch") == 0 ||
+        strcmp(tool_name, "save_patch") == 0 ||
+        strcmp(tool_name, "get_object_doc") == 0)
+        return PROXY_IO_TIMEOUT_DISK;
+    return PROXY_IO_TIMEOUT_DEFAULT;
+}
 
 /* ---- minimal HTTP client ---- */
 
 /* POST json_body to localhost:proxy_port/mcp, return response body or NULL.
    Caller must free() the returned string. */
-static char *proxy_http_post(const char *json_body)
+static char *proxy_http_post(const char *json_body, int io_timeout_sec)
 {
     int fd = -1;
     char *buf = NULL;
@@ -126,7 +147,7 @@ static char *proxy_http_post(const char *json_body)
     /* bound send/recv so an open but hung port fails quickly */
     {
         struct timeval tv;
-        tv.tv_sec = PROXY_IO_TIMEOUT_SEC;
+        tv.tv_sec = io_timeout_sec;
         tv.tv_usec = 0;
         setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&tv, sizeof(tv));
         setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (const void *)&tv, sizeof(tv));
@@ -258,9 +279,19 @@ static cJSON *handle_tools_list(cJSON *id)
 }
 
 /* forward a tools/call request to Pd's HTTP MCP server */
-static cJSON *handle_tools_call(cJSON *id, const char *original_request)
+static cJSON *handle_tools_call(cJSON *id, cJSON *req, const char *original_request)
 {
-    char *response = proxy_http_post(original_request);
+    /* extract tool name for per-tool timeout */
+    const char *tool_name = NULL;
+    cJSON *params = cJSON_GetObjectItem(req, "params");
+    if (params)
+    {
+        cJSON *name = cJSON_GetObjectItem(params, "name");
+        if (name && cJSON_IsString(name))
+            tool_name = name->valuestring;
+    }
+    int timeout = proxy_io_timeout_for_tool(tool_name);
+    char *response = proxy_http_post(original_request, timeout);
 
     if (!response)
     {
@@ -333,7 +364,7 @@ static void proxy_handle_request(const char *line)
     else if (strcmp(m, "tools/list") == 0)
         resp = handle_tools_list(id);
     else if (strcmp(m, "tools/call") == 0)
-        resp = handle_tools_call(id, line);
+        resp = handle_tools_call(id, req, line);
     else
     {
         resp = make_error(id, -32601, "Method not found");

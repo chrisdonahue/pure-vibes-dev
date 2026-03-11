@@ -468,5 +468,26 @@ cJSON *mcp_build_tools_list(void)
         cJSON_AddItemToArray(tools, tool);
     }
 
+    /* get_audio_rms */
+    {
+        const char *req[] = {"duration"};
+        tool = cJSON_CreateObject();
+        cJSON_AddStringToObject(tool, "name", "get_audio_rms");
+        cJSON_AddStringToObject(tool, "description",
+            "Get RMS (root mean square) audio level statistics from Pd's "
+            "DAC output stream over a recent time window. Only audio "
+            "routed to [dac~] is captured. Capture pauses when DSP is off, "
+            "preserving the last real audio data. Returns independent "
+            "per-channel mean, variance, min, and max RMS plus dBFS. "
+            "Response includes dsp_running flag; if false, data is from "
+            "the last DSP session.");
+        schema = mcp_make_schema(req, 1);
+        mcp_schema_add_prop(schema, "duration",
+            mcp_prop_number("Seconds of recent audio to analyze "
+                "(e.g. 1.0 for last second, up to ~60 s)"));
+        cJSON_AddItemToObject(tool, "inputSchema", schema);
+        cJSON_AddItemToArray(tools, tool);
+    }
+
     return tools;
 }
