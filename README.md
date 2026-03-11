@@ -63,7 +63,7 @@ Add this to your Claude Desktop config file:
 }
 ```
 
-Restart Claude Desktop. Pure Vibes should appear as a connected MCP server.
+**Fully quit and re-open Claude Desktop** (just closing the window is not enough — use File > Quit on Windows/Linux or Cmd+Q on macOS). After restarting, Pure Vibes should appear as a connected MCP server.
 
 ### 3. Try it out
 
