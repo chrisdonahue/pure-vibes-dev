@@ -104,9 +104,12 @@ cJSON *mcp_build_tools_list(void)
         tool = cJSON_CreateObject();
         cJSON_AddStringToObject(tool, "name", "create_object");
         cJSON_AddStringToObject(tool, "description",
-            "Create a new object in a patch. Type can be 'obj', 'msg', "
+            "Create a single object in a patch. Type can be 'obj', 'msg', "
             "'text', 'floatatom', or 'symbolatom'. For 'obj', text is "
-            "the object name and arguments (e.g. 'osc~ 440')");
+            "the object name and arguments (e.g. 'osc~ 440'). "
+            "NOTE: When creating multiple objects or objects that need "
+            "connections, use batch_update instead for atomicity and "
+            "fewer round trips.");
         schema = mcp_make_schema(req, 4);
         mcp_schema_add_prop(schema, "patch_id",
             mcp_prop_string("Patch ID"));
@@ -129,7 +132,8 @@ cJSON *mcp_build_tools_list(void)
         tool = cJSON_CreateObject();
         cJSON_AddStringToObject(tool, "name", "delete_object");
         cJSON_AddStringToObject(tool, "description",
-            "Delete an object from a patch");
+            "Delete a single object from a patch. "
+            "Prefer batch_update when deleting multiple objects.");
         schema = mcp_make_schema(req, 2);
         mcp_schema_add_prop(schema, "patch_id",
             mcp_prop_string("Patch ID"));
@@ -145,7 +149,8 @@ cJSON *mcp_build_tools_list(void)
         tool = cJSON_CreateObject();
         cJSON_AddStringToObject(tool, "name", "modify_object");
         cJSON_AddStringToObject(tool, "description",
-            "Change the text of an object (will re-instantiate it)");
+            "Change the text of a single object (will re-instantiate it). "
+            "Prefer batch_update when modifying multiple objects.");
         schema = mcp_make_schema(req, 3);
         mcp_schema_add_prop(schema, "patch_id",
             mcp_prop_string("Patch ID"));
@@ -163,7 +168,8 @@ cJSON *mcp_build_tools_list(void)
         tool = cJSON_CreateObject();
         cJSON_AddStringToObject(tool, "name", "move_object");
         cJSON_AddStringToObject(tool, "description",
-            "Move an object to a new position");
+            "Move a single object to a new position. "
+            "Prefer batch_update when repositioning multiple objects.");
         schema = mcp_make_schema(req, 4);
         mcp_schema_add_prop(schema, "patch_id",
             mcp_prop_string("Patch ID"));
@@ -184,7 +190,10 @@ cJSON *mcp_build_tools_list(void)
         tool = cJSON_CreateObject();
         cJSON_AddStringToObject(tool, "name", "connect");
         cJSON_AddStringToObject(tool, "description",
-            "Connect an outlet of one object to an inlet of another");
+            "Connect an outlet of one object to an inlet of another. "
+            "Only use for a single connection in isolation. "
+            "Prefer batch_update when making multiple connections or "
+            "combining with object creation.");
         schema = mcp_make_schema(req, 5);
         mcp_schema_add_prop(schema, "patch_id",
             mcp_prop_string("Patch ID"));
@@ -207,7 +216,8 @@ cJSON *mcp_build_tools_list(void)
         tool = cJSON_CreateObject();
         cJSON_AddStringToObject(tool, "name", "disconnect");
         cJSON_AddStringToObject(tool, "description",
-            "Disconnect an outlet from an inlet");
+            "Disconnect an outlet from an inlet. "
+            "Prefer batch_update when making multiple disconnections.");
         schema = mcp_make_schema(req, 5);
         mcp_schema_add_prop(schema, "patch_id",
             mcp_prop_string("Patch ID"));
@@ -229,9 +239,15 @@ cJSON *mcp_build_tools_list(void)
         tool = cJSON_CreateObject();
         cJSON_AddStringToObject(tool, "name", "batch_update");
         cJSON_AddStringToObject(tool, "description",
-            "Execute multiple operations atomically with DSP suspended. "
-            "Each operation is an object with 'tool' (tool name) and "
-            "'args' (arguments object). Operations execute in order.");
+            "PREFERRED tool for patch editing. Executes multiple "
+            "operations atomically in a single call with DSP suspended. "
+            "Always use this instead of individual create_object/connect/"
+            "delete_object/move_object/modify_object/disconnect calls "
+            "when performing more than one operation. Each operation is "
+            "{\"tool\": \"<tool_name>\", \"args\": {<tool_args>}}. "
+            "Supports all mutation tools. Operations execute in order "
+            "and created object IDs from earlier operations can be "
+            "referenced in later ones.");
         schema = mcp_make_schema(req, 2);
         mcp_schema_add_prop(schema, "patch_id",
             mcp_prop_string("Patch ID"));
@@ -239,7 +255,11 @@ cJSON *mcp_build_tools_list(void)
             cJSON *ops = cJSON_CreateObject();
             cJSON_AddStringToObject(ops, "type", "array");
             cJSON_AddStringToObject(ops, "description",
-                "Array of {tool, args} operations");
+                "Array of operations. Each element is "
+                "{\"tool\": \"create_object\", \"args\": {...}} etc. "
+                "Supported tools: create_object, delete_object, "
+                "modify_object, move_object, connect, disconnect. "
+                "Executed in order within a single atomic transaction.");
             mcp_schema_add_prop(schema, "operations", ops);
         }
         cJSON_AddItemToObject(tool, "inputSchema", schema);
