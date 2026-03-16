@@ -15,6 +15,21 @@
 #define MCP_SERVER_VERSION   "0.56.2"
 #define MCP_DEFAULT_PORT     4330
 
+#define MCP_INSTRUCTIONS \
+    "You are controlling Pd-vibes (Pure Vibes), a fork of Pure Data — " \
+    "a visual programming language for audio and multimedia. " \
+    "Patches contain objects (audio/control processors) connected by " \
+    "patch cords from outlets to inlets. Objects with a '~' suffix " \
+    "(e.g. osc~, dac~) process audio signals; others process control " \
+    "messages. Use get_patch_state to inspect a patch before modifying " \
+    "it. Prefer batch_update over individual create/connect/delete calls " \
+    "when making multiple changes — it is atomic and faster. " \
+    "Use get_object_doc to look up any unfamiliar object. " \
+    "DSP must be on (set_dsp) for audio to flow. " \
+    "If any tool call fails or returns a connection error, ask the user " \
+    "to check that Pd-vibes is running and the MCP checkbox is enabled " \
+    "(Media > MCP Server)."
+
 /* JSON schema helpers */
 cJSON *mcp_prop_string(const char *desc);
 cJSON *mcp_prop_int(const char *desc);
