@@ -19,7 +19,10 @@
     "You are controlling Pd-vibes (Pure Vibes), a fork of Pure Data — " \
     "a visual programming language for audio and multimedia. " \
     "Patches contain objects (audio/control processors) connected by " \
-    "patch cords from outlets to inlets. Objects with a '~' suffix " \
+    "patch cords from outlets to inlets. Every object has a unique ID " \
+    "based on its address in memory — read returned IDs when creating " \
+    "objects and use them for subsequent operations (e.g. connect). " \
+    "Objects with a '~' suffix " \
     "(e.g. osc~, dac~) process audio signals; others process control " \
     "messages. Use get_patch_state to inspect a patch before modifying " \
     "it. Prefer batch_update over individual create/connect/delete calls " \
