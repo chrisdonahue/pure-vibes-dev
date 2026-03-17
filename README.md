@@ -215,4 +215,4 @@ and redistribution.
 
 ## Acknowledgements
 
-The development of _Pure Vibes_ was supported by the Humanities and AI Virtual Institute (HAVI), a program of Schmidt Sciences.
+The development of _Pure Vibes_ was supported by the [Humanities and AI Virtual Institute (HAVI)](https://www.schmidtsciences.org/humanities-and-ai-virtual-institute/), a program of Schmidt Sciences.
