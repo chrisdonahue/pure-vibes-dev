@@ -35,6 +35,12 @@ proc ::dialog_font::do_apply {mytoplevel myfontsize stretchval whichstretch} {
             }
             ${mytoplevel}.text.internal configure -font [list $font $myfontsize]
 
+            # update banner fonts
+            foreach w {pre post} {
+                catch {${mytoplevel}.banner.inner.$w configure -font [list $font $myfontsize]}
+            }
+            catch {${mytoplevel}.banner.inner.link configure -font [list $font $myfontsize underline]}
+
             # try to adjust the width of the Pd-console to 80 chars
             catch {
                 set str80 "This string is exactly 80 characters long...ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
