@@ -24,10 +24,9 @@ Download and install an AI agent tool such as [Claude Desktop](https://code.clau
 
 Add this to your Claude Desktop config file:
 
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
 **macOS config:**
+
+**Path**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -40,6 +39,8 @@ Add this to your Claude Desktop config file:
 ```
 
 **Windows config:**
+
+**Path**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
