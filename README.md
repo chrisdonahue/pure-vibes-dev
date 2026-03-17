@@ -85,7 +85,7 @@ Fully quit and re-open Claude Desktop (File > Quit).
 </details>
 
 <details>
-<summary><strong>Linux (Pure Vibes on Linux, Claude Desktop on Mac/Windows)</strong></summary>
+<summary><strong>Linux setup</strong></summary>
 
 There is no native Claude Desktop client for Linux. If you have an agent that runs natively on Linux, you can simply register the `pd-mcp` binary as an MCP server.
 
