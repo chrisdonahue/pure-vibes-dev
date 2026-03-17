@@ -210,3 +210,9 @@ They are released under the same
 The BSD 3-Clause (Pd) and MIT (cJSON) licenses are fully compatible.
 Both are permissive open-source licenses that allow free use, modification,
 and redistribution.
+
+---
+
+## Acknowledgements
+
+The development of _Pure Vibes_ was supported by the Humanities and AI Virtual Institute (HAVI), a program of Schmidt Sciences.
