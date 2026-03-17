@@ -245,9 +245,9 @@ cJSON *mcp_build_tools_list(void)
             "delete_object/move_object/modify_object/disconnect calls "
             "when performing more than one operation. Each operation is "
             "{\"tool\": \"<tool_name>\", \"args\": {<tool_args>}}. "
-            "Supports all mutation tools. Operations execute in order "
-            "and created object IDs from earlier operations can be "
-            "referenced in later ones.");
+            "Supports all mutation tools. Operations execute in order. "
+            "To connect newly created objects, read the returned object "
+            "IDs from the results and use them in a subsequent call.");
         schema = mcp_make_schema(req, 2);
         mcp_schema_add_prop(schema, "patch_id",
             mcp_prop_string("Patch ID"));

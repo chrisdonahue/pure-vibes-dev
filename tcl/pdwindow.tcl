@@ -450,6 +450,37 @@ proc ::pdwindow::create_window {} {
     # TODO figure out how to make the menu traversable with the keyboard
     #.pdwindow.header.logmenu configure -takefocus 1
     pack .pdwindow.header.logmenu -side left
+    # info banner below header
+    frame .pdwindow.banner -background lightgray -borderwidth 0
+    pack .pdwindow.banner -side top -fill x
+    frame .pdwindow.banner.inner -background lightgray
+    pack .pdwindow.banner.inner -anchor center -pady 2
+    label .pdwindow.banner.inner.pre \
+        -text "Visit " \
+        -background lightgray -foreground "#555555" \
+        -font [list $::font_family $::pdwindow::font_size]
+    label .pdwindow.banner.inner.link \
+        -text "gclef-cmu.org/pure-vibes" \
+        -background lightgray -foreground "#0066cc" \
+        -font [list $::font_family $::pdwindow::font_size underline] \
+        -cursor hand2
+    label .pdwindow.banner.inner.post \
+        -text " for more info or to leave feedback" \
+        -background lightgray -foreground "#555555" \
+        -font [list $::font_family $::pdwindow::font_size]
+    pack .pdwindow.banner.inner.pre -side left
+    pack .pdwindow.banner.inner.link -side left
+    pack .pdwindow.banner.inner.post -side left
+    bind .pdwindow.banner.inner.link <ButtonRelease-1> {
+        ::pd_menucommands::menu_openfile "https://gclef-cmu.org/pure-vibes"
+    }
+    bind .pdwindow.banner.inner.link <Enter> {
+        .pdwindow.banner.inner.link configure -foreground "#0044aa"
+    }
+    bind .pdwindow.banner.inner.link <Leave> {
+        .pdwindow.banner.inner.link configure -foreground "#0066cc"
+    }
+
     text .pdwindow.text -relief raised -bd 2 -font [list $::font_family $::pdwindow::font_size] \
         -highlightthickness 0 -borderwidth 1 -relief flat \
         -yscrollcommand ".pdwindow.scroll set" -width 80 \
@@ -457,6 +488,7 @@ proc ::pdwindow::create_window {} {
     scrollbar .pdwindow.scroll -command ".pdwindow.text.internal yview"
     pack .pdwindow.scroll -side right -fill y
     pack .pdwindow.text -side right -fill both -expand 1
+
     raise .pdwindow
     focus .pdwindow.text
     pdwindow_bindings
