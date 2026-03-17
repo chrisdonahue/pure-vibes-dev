@@ -22,11 +22,13 @@ Launch Pd-vibes. You will see an "MCP" checkbox in the main window (next to DSP)
 
 Download and install an AI agent tool such as [Claude Desktop](https://code.claude.com/docs/en/desktop-quickstart#install). Other agents that support MCP will work as well with similar instructions.
 
-Add this to your Claude Desktop config file:
+Connect the MCP to Claude Desktop (or other AI agent) by modifying the config file, following the instructions below.
+
+Once you have updated the config file, **fully quit and re-open Claude Desktop** (just closing the window is not enough — use File > Quit on Windows/Linux or Cmd+Q on macOS). After restarting, Pure Vibes should appear as a connected MCP server.
 
 **macOS config:**
 
-**Path**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Claude Path**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -40,7 +42,7 @@ Add this to your Claude Desktop config file:
 
 **Windows config:**
 
-**Path**: `%APPDATA%\Claude\claude_desktop_config.json`
+**Claude Path**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
@@ -63,8 +65,6 @@ Add this to your Claude Desktop config file:
   }
 }
 ```
-
-**Fully quit and re-open Claude Desktop** (just closing the window is not enough — use File > Quit on Windows/Linux or Cmd+Q on macOS). After restarting, Pure Vibes should appear as a connected MCP server.
 
 ### 3. Try it out
 
