@@ -219,9 +219,7 @@ find "${PDWINDIR}" -type d -printf 'RMDir "$INSTDIR/%P"\n' \
   >> "${UNINSTALLFILE}"
 
 #### WRITE LICENSE INCLUDE ######################################
-# convert to Windows path for native NSIS compiler
-WPDWINDIR=$(cygpath -m "${PDWINDIR}" 2>/dev/null || echo "${PDWINDIR}")
-echo "!insertmacro MUI_PAGE_LICENSE \"${WPDWINDIR}/LICENSE.txt\"" \
+echo "!insertmacro MUI_PAGE_LICENSE \"${PDWINDIR}/LICENSE.txt\"" \
   > "${LICENSEFILE}"
 
 # if we are on mingw/cygwin, we have to unmangle the directories
