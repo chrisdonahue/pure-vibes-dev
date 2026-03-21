@@ -16,7 +16,7 @@ Download the latest release for your platform from the **[Releases](../../releas
   - On first launch, macOS may warn that it "can't check the app for malicious software."
   - Right-click the app in Finder, choose **Open**, then click **Open** again to bypass this.
   - Alternatively, go to **System Settings > Privacy & Security**, scroll down to the Security section, and click **Open Anyway** next to the Pd-vibes message.
-- **Windows**: Download `Pd-vibes-windows-x86_64.tar.gz`, extract, run `bin\pd.exe`
+- **Windows**: Download `Pd-vibes-windows-x86_64-installer.exe`, run the installer, then launch Pd from the Start menu or desktop shortcut.
 
 Launch Pd-vibes. The MCP server starts automatically, and Pd-vibes will attempt to automatically register itself in your Claude Desktop configuration file.
 
