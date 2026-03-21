@@ -114,7 +114,7 @@ jobs:
       - name: Build installer
         run: |
           cd msw
-          ./build-nsi.sh -o "$(pwd)" pd-vibes vibes
+          ./build-nsi.sh -o "$(cygpath -m "$(pwd)")" "$(cygpath -m "$(pwd)/pd-vibes")" vibes
 
       - name: Package
         run: |
