@@ -93,6 +93,7 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-autotools
             mingw-w64-x86_64-gettext
+            mingw-w64-x86_64-nsis
             make
             autoconf
             automake
@@ -105,17 +106,26 @@ jobs:
           ./configure CFLAGS="-O2 -DPD_VIBES_RELEASE"
           make -j$(nproc)
 
+      - name: Create app directory
+        run: |
+          cd msw
+          ./msw-app.sh --builddir .. vibes
+
+      - name: Build installer
+        run: |
+          cd msw
+          ./build-nsi.sh -o "$(pwd)" pd-vibes vibes
+
       - name: Package
         run: |
-          make DESTDIR=$(pwd)/pkg install
-          cd pkg
-          tar czf ../Pd-vibes-windows-x86_64.tar.gz .
+          cd msw
+          mv Pd-vibes.windows-installer.exe Pd-vibes-windows-x86_64-installer.exe
 
-      - name: Upload Windows artifact
+      - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
           name: Pd-vibes-windows-x86_64
-          path: Pd-vibes-windows-x86_64.tar.gz
+          path: msw/Pd-vibes-windows-x86_64-installer.exe
 
   # ── Create GitHub Release ──────────────────────────────────────
   release:
@@ -136,4 +146,4 @@ jobs:
           files: |
             artifacts/Pd-vibes-macos/Pd-vibes-macos.zip
             artifacts/Pd-vibes-linux-x86_64/Pd-vibes-linux-x86_64.tar.gz
-            artifacts/Pd-vibes-windows-x86_64/Pd-vibes-windows-x86_64.tar.gz
+            artifacts/Pd-vibes-windows-x86_64/Pd-vibes-windows-x86_64-installer.exe
