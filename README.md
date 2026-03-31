@@ -98,7 +98,7 @@ Fully quit and re-open Claude Desktop after saving the config.
 
 **2. Add a `stdio` entry for `pd-mcp`**
 
-Use the same binary path as in [Manual Claude Desktop registration](#manual-claude-desktop-registration) (release app) or your build’s `bin/pd-mcp`. After saving, **restart Cursor** (or toggle the server under **Settings → Cursor Settings → Tools & MCP**) so the config loads.
+Use the same binary path as in [Manual Claude Desktop registration](#manual-claude-desktop-registration) (release app) or your build’s `bin/pd-mcp`. After saving, **restart Cursor** (or disable and re-enable **pure-vibes** under **Settings > Cursor Settings > Tools & MCP**) so the config loads.
 
 **macOS** — `.cursor/mcp.json` or `~/.cursor/mcp.json`:
 
@@ -132,7 +132,7 @@ Use the same binary path as in [Manual Claude Desktop registration](#manual-clau
 
 **3. Verify**
 
-Open **Settings → Cursor Settings → Tools & MCP**. Under **Installed MCP Servers**, confirm **pure-vibes** is listed and enabled. In Agent chat, ask whether the Pure Vibes MCP tools are visible, or check **Output → MCP Logs** if something fails to connect.
+Open **Settings > Cursor Settings > Tools & MCP**. Under **Installed MCP Servers**, confirm **pure-vibes** is listed and enabled. In Agent chat, ask whether the Pure Vibes MCP tools are visible, or check **Output → MCP Logs** if something fails to connect.
 
 ### Linux with Claude Code
 
