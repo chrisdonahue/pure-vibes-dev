@@ -87,6 +87,53 @@ If auto-registration doesn't work or you want custom configuration (e.g. a diffe
 
 Fully quit and re-open Claude Desktop after saving the config.
 
+### Register w/ Cursor
+
+**Prerequisite:** Launch Pd-vibes first so its MCP server is running (`pd-mcp` talks to the running instance over localhost). Cursor does not auto-register Pd-vibes; add the server manually.
+
+**1. Choose a config location**
+
+- **Project** — Create or edit `.cursor/mcp.json` in your repo (good for sharing or per-project setup).
+- **Global** — Create or edit `~/.cursor/mcp.json` so Pure Vibes is available in every workspace.
+
+**2. Add a `stdio` entry for `pd-mcp`**
+
+Use the same binary path as in [Manual Claude Desktop registration](#manual-claude-desktop-registration) (release app) or your build’s `bin/pd-mcp`. After saving, **restart Cursor** (or disable and re-enable the server under **Settings → Features → Model Context Protocol**) so the config loads.
+
+**macOS** — `.cursor/mcp.json` or `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "Pure Vibes": {
+      "type": "stdio",
+      "command": "/Applications/Pd-vibes.app/Contents/Resources/bin/pd-mcp"
+    }
+  }
+}
+```
+
+**Windows** — use your install path, for example:
+
+```json
+{
+  "mcpServers": {
+    "Pure Vibes": {
+      "type": "stdio",
+      "command": "C:\\Program Files\\pd-vibes\\bin\\pd-mcp.exe"
+    }
+  }
+}
+```
+
+**Dev / Linux (local Pd):** point `command` at your clone’s `bin/pd-mcp`, e.g. `"command": "/path/to/pure-vibes/bin/pd-mcp"`.
+
+**Remote Pd on another machine:** add `"args": ["--host", "192.168.1.42"]` (and optionally `"--port", "4330"`) to the server object, matching [Remote control](#remote-control-pd-on-linux-claude-desktop-on-macwindows). Use the `pd-mcp` binary from your Cursor machine’s Pd-vibes install.
+
+**3. Verify**
+
+Under **Settings → Features → Model Context Protocol**, confirm **Pure Vibes** is listed and enabled. In Agent chat, ask whether the Pure Vibes MCP tools are visible, or check **Output → MCP Logs** if something fails to connect.
+
 ### Linux with Claude Code
 
 [Claude Code](https://claude.ai/code) is Anthropic's official CLI and runs natively on Linux, making it the easiest way to use Pure Vibes on Linux.
